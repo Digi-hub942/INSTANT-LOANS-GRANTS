@@ -359,7 +359,7 @@
             if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
                 let adminUser = users.find(u => u.email === ADMIN_EMAIL);
                 if (!adminUser) {
-                    adminUser = { email: ADMIN_EMAIL, phone: "0792844220", password: ADMIN_PASS, fullName: "Daniel Chiro (Admin)", isAdmin: true, verified: true };
+                    adminUser = { email: ADMIN_EMAIL, phone: "0768655532", password: ADMIN_PASS, fullName: "Daniel Chiro (Admin)", isAdmin: true, verified: true };
                     users.push(adminUser);
                     localStorage.setItem('ilg_users', JSON.stringify(users));
                 }
