@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Loan Guarantees</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="bg-emerald-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <svg class="w-8 h-8 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-xl font-bold tracking-wide">Instant Loan Guarantees</span>
+            </div>
+            <div id="nav-user-info" class="hidden flex items-center space-x-3">
+                <span id="admin-badge" class="hidden text-xs bg-red-600 text-white font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Admin Portal</span>
+                <span id="nav-username" class="text-sm font-medium bg-emerald-800 px-3 py-1 rounded-full"></span>
+                <button onclick="logout()" class="text-xs bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg font-semibold transition">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
+
+        <!-- Notification Banner / Modal Box -->
+        <div id="alert-box" class="hidden mb-6 p-4 rounded-xl shadow border text-sm flex items-center justify-between transition-all">
+            <span id="alert-message"></span>
+            <button onclick="hideAlert()" class="font-bold text-lg px-2">&times;</button>
+        </div>
+
+        <!-- VIEW 1: Auth (Login / Signup) -->
+        <section id="view-auth" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8 border border-slate-100 mt-4">
+            <div class="text-center mb-6">
+                <h1 id="auth-title" class="text-2xl font-bold text-slate-900">Welcome Back</h1>
+                <p id="auth-subtitle" class="text-sm text-slate-500 mt-1">Sign in to manage your instant loans</p>
+            </div>
+
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+                <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-emerald-700 transition">Login</button>
+                <button id="tab-signup" onclick="switchAuthTab('signup')" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 transition">Sign Up</button>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
+                <div id="signup-fields" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Full Names</label>
+                        <input type="text" id="signup-name" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="John Doe">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Email Address</label>
+                    <input type="email" id="auth-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="user@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Phone Number (M-Pesa)</label>
+                    <input type="tel" id="auth-phone" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="07XXXXXXXX">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
+                    <input type="password" id="auth-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" id="auth-btn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/20 transition">Login</button>
+            </form>
+        </section>
+
+        <!-- VIEW 2: User Dashboard -->
+        <section id="view-dashboard" class="hidden space-y-6">
+            <!-- Top Summary Card -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase font-semibold text-slate-400">Account Status</p>
+                        <h2 id="dash-status" class="text-lg font-bold text-slate-800 mt-1">Not Verified</h2>
+                    </div>
+                    <div id="dash-status-icon" class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase font-semibold text-slate-400">Registration Fee Paybill / Number</p>
+                        <h2 class="text-lg font-bold text-emerald-700 mt-1">0792 844 220</h2>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs uppercase font-semibold text-slate-400">Active Loan Application</p>
+                        <h2 id="dash-active-loan" class="text-lg font-bold text-slate-800 mt-1">None</h2>
+                    </div>
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 v2m6 10h-6"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KYC Verification Banner if not verified -->
+            <div id="kyc-banner" class="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-xl font-bold">Complete KYC & Registration Fee Validation</h3>
+                    <p class="text-amber-100 text-sm mt-1">Upload your ID and pay the corresponding registration fee to unlock loan applications. Money is disbursed within 2 working hours.</p>
+                </div>
+                <button onclick="openKycModal()" class="whitespace-nowrap px-6 py-3 bg-white text-orange-600 font-semibold rounded-xl shadow hover:bg-orange-50 transition">Verify Account Now</button>
+            </div>
+
+            <!-- Loan Tiers Grid -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-slate-900">Available Loan Tiers & Registration Fees</h3>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full font-medium">Interest: 10% per month (duration based)</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="loan-tiers-container">
+                    <!-- Dynamic Loan Tiers injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: Admin Portal -->
+        <section id="view-admin" class="hidden space-y-8">
+            <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold">Admin Management Control Center</h2>
+                    <p class="text-xs text-slate-400 mt-1">Logged in as Administrator (<span class="text-emerald-400 font-semibold">chirodaniel9@gmail.com</span>)</p>
+                </div>
+                <div class="flex space-x-3 text-sm">
+                    <div class="bg-slate-800 px-4 py-2 rounded-xl text-center">
+                        <span class="text-xs text-slate-400 block">Total Users</span>
+                        <strong id="admin-stat-users" class="text-lg text-emerald-400">0</strong>
+                    </div>
+                    <div class="bg-slate-800 px-4 py-2 rounded-xl text-center">
+                        <span class="text-xs text-slate-400 block">Total Applications</span>
+                        <strong id="admin-stat-apps" class="text-lg text-blue-400">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation for Admin -->
+            <div class="flex border-b border-slate-200 space-x-6">
+                <button id="admin-tab-payments-btn" onclick="switchAdminTab('payments')" class="pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition">Registration Payments Records</button>
+                <button id="admin-tab-users-btn" onclick="switchAdminTab('users')" class="pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Registered Accounts</button>
+            </div>
+
+            <!-- ADMIN TAB 1: Payments & Applications Table -->
+            <div id="admin-tab-payments" class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800">Registration Fee & Loan Requests</h3>
+                    <button onclick="renderAdminData()" class="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded-lg text-slate-700 font-medium">Refresh Records</button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-500 font-semibold uppercase border-b border-slate-100">
+                            <tr>
+                                <th class="p-4">Timestamp</th>
+                                <th class="p-4">Applicant Name & ID</th>
+                                <th class="p-4">Loan Target Phone</th>
+                                <th class="p-4">Loan Amount</th>
+                                <th class="p-4">Reg Fee</th>
+                                <th class="p-4">M-Pesa Code</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-payments-list" class="divide-y divide-slate-100">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB 2: Registered Users Table -->
+            <div id="admin-tab-users" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800">All Registered Accounts</h3>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-500 font-semibold uppercase border-b border-slate-100">
+                            <tr>
+                                <th class="p-4">Full Name</th>
+                                <th class="p-4">Email</th>
+                                <th class="p-4">Phone Number</th>
+                                <th class="p-4">Verification Status</th>
+                                <th class="p-4">Active Loan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-list" class="divide-y divide-slate-100">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: KYC & Registration Fee Validation -->
+    <div id="modal-kyc" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-slate-900">KYC & Registration Validation</h3>
+                <button onclick="closeKycModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Please fill in your exact details as per your National ID card and simulate your registration fee payment to <strong>0792844220</strong>.</p>
+            
+            <form onsubmit="submitKyc(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Full Names (As on ID)</label>
+                    <input type="text" id="kyc-fullname" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="e.g. Jane Doe">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">National ID Number</label>
+                    <input type="text" id="kyc-idnumber" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="e.g. 12345678">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Upload ID Photo (Front)</label>
+                    <input type="file" id="kyc-idphoto" accept="image/*" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <p class="text-xs font-bold text-slate-700">Registration Fee Payment Info</p>
+                    <p class="text-xs text-slate-500">Send the required registration fee to phone number: <strong class="text-emerald-700">0792844220</strong>, then enter the M-Pesa Transaction Code below.</p>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">M-Pesa Transaction Code</label>
+                        <input type="text" id="kyc-mpesa" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm uppercase" placeholder="e.g. QHX789PL23">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg transition">Submit & Verify Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Apply Loan -->
+    <div id="modal-loan" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-slate-900">Confirm Loan Application</h3>
+                <button onclick="closeLoanModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            <div id="loan-modal-content" class="space-y-4 text-sm text-slate-600">
+                <!-- Loan breakdown -->
+            </div>
+            <div class="mt-6 flex space-x-3">
+                <button onclick="closeLoanModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition">Cancel</button>
+                <button onclick="confirmLoanApplication()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg transition">Apply Loan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        &copy; 2026 Instant Loan Guarantees. All rights reserved. Time taken to grant loan: two working hours.
+    </footer>
+
+    <script>
+        // Loan Tiers based on handwritten spec
+        const loanTiers = [
+            { amount: 10000, regFee: 550 },
+            { amount: 9000, regFee: 500 },
+            { amount: 8000, regFee: 450 },
+            { amount: 7000, regFee: 400 },
+            { amount: 6000, regFee: 350 },
+            { amount: 5000, regFee: 300 },
+            { amount: 4000, regFee: 250 },
+            { amount: 3000, regFee: 200 },
+            { amount: 2000, regFee: 150 },
+            { amount: 1000, regFee: 100 },
+            { amount: 500, regFee: 50 }
+        ];
+
+        let currentUser = null;
+        let selectedTierForLoan = null;
+
+        const ADMIN_EMAIL = "chirodaniel9@gmail.com";
+        const ADMIN_PASS = "14415";
+
+        // Initialize App state from localStorage
+        function initApp() {
+            // Pre-seed admin user if not exists
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            if (!users.find(u => u.email === ADMIN_EMAIL)) {
+                users.push({
+                    email: ADMIN_EMAIL,
+                    phone: "0768655532",
+                    password: ADMIN_PASS,
+                    fullName: "Daniel Chiro (Admin)",
+                    isAdmin: true,
+                    verified: true,
+                    kyc: null,
+                    activeLoan: null
+                });
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+            }
+
+            const savedUser = localStorage.getItem('ilg_current_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser.email === ADMIN_EMAIL) {
+                    showAdminPortal();
+                } else {
+                    showDashboard();
+                }
+            } else {
+                showAuthView();
+            }
+            renderLoanTiers();
+        }
+
+        // Auth Tab Switcher
+        let activeAuthMode = 'login';
+        function switchAuthTab(mode) {
+            activeAuthMode = mode;
+            const loginTab = document.getElementById('tab-login');
+            const signupTab = document.getElementById('tab-signup');
+            const signupFields = document.getElementById('signup-fields');
+            const authTitle = document.getElementById('auth-title');
+            const authSubtitle = document.getElementById('auth-subtitle');
+            const authBtn = document.getElementById('auth-btn');
+
+            if (mode === 'login') {
+                loginTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-emerald-700 transition";
+                signupTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 transition";
+                signupFields.classList.add('hidden');
+                document.getElementById('signup-name').removeAttribute('required');
+                authTitle.innerText = "Welcome Back";
+                authSubtitle.innerText = "Sign in to manage your instant loans";
+                authBtn.innerText = "Login";
+            } else {
+                signupTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-emerald-700 transition";
+                loginTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 transition";
+                signupFields.classList.remove('hidden');
+                document.getElementById('signup-name').setAttribute('required', 'true');
+                authTitle.innerText = "Create Account";
+                authSubtitle.innerText = "Register to apply for instant loan guarantees";
+                authBtn.innerText = "Sign Up";
+            }
+        }
+
+        // Handle Auth Submission
+        function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const phone = document.getElementById('auth-phone').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+
+            // Check Admin Login
+            if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
+                let adminUser = users.find(u => u.email === ADMIN_EMAIL);
+                if (!adminUser) {
+                    adminUser = { email: ADMIN_EMAIL, phone: "0792844220", password: ADMIN_PASS, fullName: "Daniel Chiro (Admin)", isAdmin: true, verified: true };
+                    users.push(adminUser);
+                    localStorage.setItem('ilg_users', JSON.stringify(users));
+                }
+                currentUser = adminUser;
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                showAlert("Logged in as Admin successfully!", "success");
+                showAdminPortal();
+                return;
+            }
+
+            if (activeAuthMode === 'signup') {
+                const fullName = document.getElementById('signup-name').value;
+                const existing = users.find(u => u.email === email || u.phone === phone);
+                if (existing) {
+                    showAlert("User with this email or phone already exists.", "error");
+                    return;
+                }
+                const newUser = {
+                    email,
+                    phone,
+                    password,
+                    fullName,
+                    verified: false,
+                    kyc: null,
+                    activeLoan: null,
+                    registeredAt: new Date().toLocaleDateString()
+                };
+                users.push(newUser);
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+                currentUser = newUser;
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                showAlert("Account created successfully!", "success");
+                showDashboard();
+            } else {
+                const user = users.find(u => u.email === email && u.password === password);
+                if (!user) {
+                    showAlert("Invalid email or password.", "error");
+                    return;
+                }
+                currentUser = user;
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                showAlert("Logged in successfully!", "success");
+                
+                if (currentUser.email === ADMIN_EMAIL) {
+                    showAdminPortal();
+                } else {
+                    showDashboard();
+                }
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('ilg_current_user');
+            showAuthView();
+            showAlert("Logged out successfully.", "success");
+        }
+
+        function showAuthView() {
+            document.getElementById('view-auth').classList.remove('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-admin').classList.add('hidden');
+            document.getElementById('nav-user-info').classList.add('hidden');
+            document.getElementById('admin-badge').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('view-auth').classList.add('hidden');
+            document.getElementById('view-admin').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.remove('hidden');
+            document.getElementById('nav-user-info').classList.remove('hidden');
+            document.getElementById('admin-badge').classList.add('hidden');
+            document.getElementById('nav-username').innerText = currentUser.fullName || currentUser.email;
+
+            updateDashboardData();
+        }
+
+        function showAdminPortal() {
+            document.getElementById('view-auth').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-admin').classList.remove('hidden');
+            document.getElementById('nav-user-info').classList.remove('hidden');
+            document.getElementById('admin-badge').classList.remove('hidden');
+            document.getElementById('nav-username').innerText = currentUser.fullName;
+
+            renderAdminData();
+        }
+
+        function updateDashboardData() {
+            const statusEl = document.getElementById('dash-status');
+            const statusIcon = document.getElementById('dash-status-icon');
+            const kycBanner = document.getElementById('kyc-banner');
+            const activeLoanEl = document.getElementById('dash-active-loan');
+
+            if (currentUser.verified) {
+                statusEl.innerText = "Verified & Active";
+                statusEl.className = "text-lg font-bold text-emerald-700 mt-1";
+                statusIcon.className = "p-3 bg-emerald-50 text-emerald-600 rounded-xl";
+                statusIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                kycBanner.classList.add('hidden');
+            } else {
+                statusEl.innerText = "Not Verified / Reg Fee Pending";
+                statusEl.className = "text-lg font-bold text-amber-600 mt-1";
+                statusIcon.className = "p-3 bg-amber-50 text-amber-600 rounded-xl";
+                statusIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                kycBanner.classList.remove('hidden');
+            }
+
+            if (currentUser.activeLoan) {
+                activeLoanEl.innerText = `Ksh ${currentUser.activeLoan.amount.toLocaleString()} (${currentUser.activeLoan.status})`;
+            } else {
+                activeLoanEl.innerText = "None";
+            }
+        }
+
+        // Render Loan Tiers
+        function renderLoanTiers() {
+            const container = document.getElementById('loan-tiers-container');
+            container.innerHTML = loanTiers.map(tier => {
+                const monthlyInterest = tier.amount * 0.10;
+                return `
+                    <div class="border border-slate-200 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition bg-gradient-to-b from-white to-slate-50">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">Instant Tier</span>
+                                <span class="text-xs text-slate-400 font-medium">Reg Fee: Ksh ${tier.regFee}</span>
+                            </div>
+                            <h4 class="text-2xl font-bold text-slate-900 mt-1">Ksh ${tier.amount.toLocaleString()}</h4>
+                            <p class="text-xs text-slate-500 mt-1">Repayment Interest: 10% / month (duration based)</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold">Est. Monthly Interest</p>
+                                <p class="text-sm font-bold text-slate-700">Ksh ${monthlyInterest.toLocaleString()}</p>
+                            </div>
+                            <button onclick="handleApplyClick(${tier.amount}, ${tier.regFee})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition">Apply Now</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // KYC Modal Controls
+        function openKycModal() {
+            document.getElementById('modal-kyc').classList.remove('hidden');
+            document.getElementById('modal-kyc').classList.add('flex');
+            if (currentUser.fullName) {
+                document.getElementById('kyc-fullname').value = currentUser.fullName;
+            }
+        }
+        function closeKycModal() {
+            document.getElementById('modal-kyc').classList.add('hidden');
+            document.getElementById('modal-kyc').classList.remove('flex');
+        }
+
+        function submitKyc(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('kyc-fullname').value;
+            const idNumber = document.getElementById('kyc-idnumber').value;
+            const mpesaCode = document.getElementById('kyc-mpesa').value;
+
+            currentUser.fullName = fullName;
+            currentUser.verified = true;
+            currentUser.kyc = { idNumber, mpesaCode, verifiedAt: new Date().toLocaleString() };
+
+            updateUserInStorage();
+            closeKycModal();
+            updateDashboardData();
+            showAlert("KYC & Registration Fee submitted for verification!", "success");
+        }
+
+        // Loan Application Modal
+        function handleApplyClick(amount, regFee) {
+            if (!currentUser.verified) {
+                showAlert("You cannot apply if you have not paid the registration fee and completed KYC verification.", "error");
+                openKycModal();
+                return;
+            }
+            if (currentUser.activeLoan) {
+                showAlert("You already have an active loan application or disbursed loan.", "error");
+                return;
+            }
+
+            selectedTierForLoan = { amount, regFee };
+            const content = document.getElementById('loan-modal-content');
+            content.innerHTML = `
+                <div class="bg-slate-50 p-4 rounded-xl space-y-2">
+                    <div class="flex justify-between"><span class="text-slate-500">Loan Amount:</span> <span class="font-bold text-slate-800">Ksh ${amount.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Registration Fee Paid:</span> <span class="font-bold text-emerald-600">Ksh ${regFee} (Verified)</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Disbursement Phone:</span> <span class="font-bold text-slate-800">${currentUser.phone}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Processing Time:</span> <span class="font-bold text-amber-600">2 Working Hours</span></div>
+                </div>
+                <p class="text-xs text-slate-500">Loan will be deposited directly to your phone number upon validation.</p>
+            `;
+
+            document.getElementById('modal-loan').classList.remove('hidden');
+            document.getElementById('modal-loan').classList.add('flex');
+        }
+
+        function closeLoanModal() {
+            document.getElementById('modal-loan').classList.add('hidden');
+            document.getElementById('modal-loan').classList.remove('flex');
+        }
+
+        function confirmLoanApplication() {
+            const loanRecord = {
+                amount: selectedTierForLoan.amount,
+                regFee: selectedTierForLoan.regFee,
+                status: 'Pending Verification',
+                appliedAt: new Date().toLocaleString(),
+                idNumber: currentUser.kyc ? currentUser.kyc.idNumber : 'N/A',
+                mpesaCode: currentUser.kyc ? currentUser.kyc.mpesaCode : 'N/A',
+                phone: currentUser.phone,
+                userEmail: currentUser.email,
+                userName: currentUser.fullName
+            };
+
+            currentUser.activeLoan = loanRecord;
+
+            // Save record in central payments log
+            let allPayments = JSON.parse(localStorage.getItem('ilg_payments') || '[]');
+            allPayments.push(loanRecord);
+            localStorage.setItem('ilg_payments', JSON.stringify(allPayments));
+
+            updateUserInStorage();
+            closeLoanModal();
+            updateDashboardData();
+            showAlert("Loan application submitted successfully! Time taken to grant loan is two working hours.", "success");
+        }
+
+        function updateUserInStorage() {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            users = users.map(u => u.email === currentUser.email ? currentUser : u);
+            localStorage.setItem('ilg_users', JSON.stringify(users));
+            localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+        }
+
+        // ADMIN FUNCTIONS
+        function switchAdminTab(tab) {
+            const payTab = document.getElementById('admin-tab-payments');
+            const usersTab = document.getElementById('admin-tab-users');
+            const payBtn = document.getElementById('admin-tab-payments-btn');
+            const usersBtn = document.getElementById('admin-tab-users-btn');
+
+            if (tab === 'payments') {
+                payTab.classList.remove('hidden');
+                usersTab.classList.add('hidden');
+                payBtn.className = "pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition";
+                usersBtn.className = "pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition";
+            } else {
+                usersTab.classList.remove('hidden');
+                payTab.classList.add('hidden');
+                usersBtn.className = "pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition";
+                payBtn.className = "pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition";
+            }
+        }
+
+        function renderAdminData() {
+            const users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            const payments = JSON.parse(localStorage.getItem('ilg_payments') || '[]');
+
+            document.getElementById('admin-stat-users').innerText = users.filter(u => u.email !== ADMIN_EMAIL).length;
+            document.getElementById('admin-stat-apps').innerText = payments.length;
+
+            // Render Payments List
+            const paymentsBody = document.getElementById('admin-payments-list');
+            if (payments.length === 0) {
+                paymentsBody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No payment or loan applications recorded yet.</td></tr>`;
+            } else {
+                paymentsBody.innerHTML = payments.map((p, index) => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 whitespace-nowrap text-slate-400">${p.appliedAt}</td>
+                        <td class="p-4"><strong class="text-slate-800 block">${p.userName}</strong>ID: ${p.idNumber}</td>
+                        <td class="p-4 font-semibold text-slate-700">${p.phone}</td>
+                        <td class="p-4 font-bold text-emerald-700">Ksh ${p.amount.toLocaleString()}</td>
+                        <td class="p-4 font-medium text-slate-600">Ksh ${p.regFee}</td>
+                        <td class="p-4 uppercase font-mono font-bold text-blue-600">${p.mpesaCode}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                                p.status === 'Approved / Disbursed' ? 'bg-emerald-100 text-emerald-800' :
+                                p.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                            }">${p.status}</span>
+                        </td>
+                        <td class="p-4 text-right space-x-1">
+                            ${p.status === 'Pending Verification' ? `
+                                <button onclick="updatePaymentStatus(${index}, 'Approved / Disbursed')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-[11px] font-semibold">Approve</button>
+                                <button onclick="updatePaymentStatus(${index}, 'Rejected')" class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-[11px] font-semibold">Reject</button>
+                            ` : `<span class="text-slate-400 text-[11px]">Completed</span>`}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Render Registered Users List
+            const usersBody = document.getElementById('admin-users-list');
+            const clientUsers = users.filter(u => u.email !== ADMIN_EMAIL);
+            if (clientUsers.length === 0) {
+                usersBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No registered client accounts found.</td></tr>`;
+            } else {
+                usersBody.innerHTML = clientUsers.map(u => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-semibold text-slate-800">${u.fullName || 'N/A'}</td>
+                        <td class="p-4">${u.email}</td>
+                        <td class="p-4 font-medium">${u.phone}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${u.verified ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                                ${u.verified ? 'Reg Fee Paid' : 'Pending Fee'}
+                            </span>
+                        </td>
+                        <td class="p-4">${u.activeLoan ? `Ksh ${u.activeLoan.amount.toLocaleString()}` : 'None'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function updatePaymentStatus(index, newStatus) {
+            let payments = JSON.parse(localStorage.getItem('ilg_payments') || '[]');
+            if (payments[index]) {
+                payments[index].status = newStatus;
+                localStorage.setItem('ilg_payments', JSON.stringify(payments));
+
+                // Synchronize status back to user account
+                let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+                let targetUser = users.find(u => u.email === payments[index].userEmail);
+                if (targetUser && targetUser.activeLoan) {
+                    targetUser.activeLoan.status = newStatus;
+                    localStorage.setItem('ilg_users', JSON.stringify(users));
+                }
+
+                renderAdminData();
+                showAlert(`Loan application marked as ${newStatus}`, "success");
+            }
+        }
+
+        // Notification Message Box Helper (Replaces alert())
+        function showAlert(msg, type) {
+            const alertBox = document.getElementById('alert-box');
+            const alertMessage = document.getElementById('alert-message');
+            alertMessage.innerText = msg;
+            alertBox.className = `mb-6 p-4 rounded-xl shadow border text-sm flex items-center justify-between transition-all ${
+                type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`;
+            alertBox.classList.remove('hidden');
+            setTimeout(() => { hideAlert(); }, 6000);
+        }
+
+        function hideAlert() {
+            document.getElementById('alert-box').classList.add('hidden');
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
