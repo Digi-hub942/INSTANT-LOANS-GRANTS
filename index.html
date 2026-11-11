@@ -290,4 +290,412 @@
             if (!users.find(u => u.email === ADMIN_EMAIL)) {
                 users.push({
                     email: ADMIN_EMAIL,
-                    phone:
+                    phone: "0768655532",
+                    password: ADMIN_PASS,
+                    fullName: "Daniel Chiro (Admin)",
+                    isAdmin: true,
+                    verified: true,
+                    kyc: null,
+                    activeLoan: null
+                });
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+            }
+
+            const savedUser = localStorage.getItem('ilg_current_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser.email === ADMIN_EMAIL) {
+                    showAdminPortal();
+                } else {
+                    showDashboard();
+                }
+            } else {
+                showAuthView();
+            }
+            renderLoanTiers();
+        }
+
+        // Auth Tab Switcher
+        let activeAuthMode = 'login';
+        function switchAuthTab(mode) {
+            activeAuthMode = mode;
+            const loginTab = document.getElementById('tab-login');
+            const signupTab = document.getElementById('tab-signup');
+            const signupFields = document.getElementById('signup-fields');
+            const authTitle = document.getElementById('auth-title');
+            const authSubtitle = document.getElementById('auth-subtitle');
+            const authBtn = document.getElementById('auth-btn');
+
+            if (mode === 'login') {
+                loginTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-emerald-700 transition";
+                signupTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 transition";
+                signupFields.classList.add('hidden');
+                document.getElementById('signup-name').removeAttribute('required');
+                authTitle.innerText = "Welcome Back";
+                authSubtitle.innerText = "Sign in to manage your instant loans";
+                authBtn.innerText = "Login";
+            } else {
+                signupTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-emerald-700 transition";
+                loginTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 transition";
+                signupFields.classList.remove('hidden');
+                document.getElementById('signup-name').setAttribute('required', 'true');
+                authTitle.innerText = "Create Account";
+                authSubtitle.innerText = "Register to apply for instant loan guarantees";
+                authBtn.innerText = "Sign Up";
+            }
+        }
+
+        // Handle Auth Submission
+        function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const phone = document.getElementById('auth-phone').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+
+            if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
+                let adminUser = users.find(u => u.email === ADMIN_EMAIL);
+                if (!adminUser) {
+                    adminUser = { email: ADMIN_EMAIL, phone: "0768655532", password: ADMIN_PASS, fullName: "Daniel Chiro (Admin)", isAdmin: true, verified: true };
+                    users.push(adminUser);
+                    localStorage.setItem('ilg_users', JSON.stringify(users));
+                }
+                currentUser = adminUser;
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                showAlert("Logged in as Admin successfully!", "success");
+                showAdminPortal();
+                return;
+            }
+
+            if (activeAuthMode === 'signup') {
+                const fullName = document.getElementById('signup-name').value;
+                const existing = users.find(u => u.email === email || u.phone === phone);
+                if (existing) {
+                    showAlert("User with this email or phone already exists.", "error");
+                    return;
+                }
+                const newUser = {
+                    email,
+                    phone,
+                    password,
+                    fullName,
+                    verified: false,
+                    kyc: null,
+                    activeLoan: null,
+                    registeredAt: new Date().toLocaleDateString()
+                };
+                users.push(newUser);
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+                currentUser = newUser;
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                showAlert("Account created successfully!", "success");
+                showDashboard();
+            } else {
+                const user = users.find(u => u.email === email && u.password === password);
+                if (!user) {
+                    showAlert("Invalid email or password.", "error");
+                    return;
+                }
+                currentUser = user;
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                showAlert("Logged in successfully!", "success");
+                
+                if (currentUser.email === ADMIN_EMAIL) {
+                    showAdminPortal();
+                } else {
+                    showDashboard();
+                }
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('ilg_current_user');
+            showAuthView();
+            showAlert("Logged out successfully.", "success");
+        }
+
+        function showAuthView() {
+            document.getElementById('view-auth').classList.remove('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-admin').classList.add('hidden');
+            document.getElementById('nav-user-info').classList.add('hidden');
+            document.getElementById('admin-badge').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('view-auth').classList.add('hidden');
+            document.getElementById('view-admin').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.remove('hidden');
+            document.getElementById('nav-user-info').classList.remove('hidden');
+            document.getElementById('admin-badge').classList.add('hidden');
+            document.getElementById('nav-username').innerText = currentUser.fullName || currentUser.email;
+
+            updateDashboardData();
+        }
+
+        function showAdminPortal() {
+            document.getElementById('view-auth').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-admin').classList.remove('hidden');
+            document.getElementById('nav-user-info').classList.remove('hidden');
+            document.getElementById('admin-badge').classList.remove('hidden');
+            document.getElementById('nav-username').innerText = currentUser.fullName;
+
+            renderAdminData();
+        }
+
+        function updateDashboardData() {
+            const statusEl = document.getElementById('dash-status');
+            const statusIcon = document.getElementById('dash-status-icon');
+            const kycBanner = document.getElementById('kyc-banner');
+            const activeLoanEl = document.getElementById('dash-active-loan');
+
+            if (currentUser.verified) {
+                statusEl.innerText = "Verified & Active";
+                statusEl.className = "text-base sm:text-lg font-bold text-emerald-700 mt-1";
+                statusIcon.className = "p-3 bg-emerald-50 text-emerald-600 rounded-xl flex-shrink-0";
+                statusIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                kycBanner.classList.add('hidden');
+            } else {
+                statusEl.innerText = "Not Verified / Reg Fee Pending";
+                statusEl.className = "text-base sm:text-lg font-bold text-amber-600 mt-1";
+                statusIcon.className = "p-3 bg-amber-50 text-amber-600 rounded-xl flex-shrink-0";
+                statusIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                kycBanner.classList.remove('hidden');
+            }
+
+            if (currentUser.activeLoan) {
+                activeLoanEl.innerText = `Ksh ${currentUser.activeLoan.amount.toLocaleString()} (${currentUser.activeLoan.status})`;
+            } else {
+                activeLoanEl.innerText = "None";
+            }
+        }
+
+        // Render Loan Tiers
+        function renderLoanTiers() {
+            const container = document.getElementById('loan-tiers-container');
+            container.innerHTML = loanTiers.map(tier => {
+                const monthlyInterest = tier.amount * 0.10;
+                return `
+                    <div class="border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col justify-between hover:shadow-md transition bg-gradient-to-b from-white to-slate-50">
+                        <div>
+                            <div class="flex justify-between items-start mb-2 gap-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">Instant Tier</span>
+                                <span class="text-xs text-slate-400 font-medium">Reg Fee: Ksh ${tier.regFee}</span>
+                            </div>
+                            <h4 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">Ksh ${tier.amount.toLocaleString()}</h4>
+                            <p class="text-xs text-slate-500 mt-1">Repayment Interest: 10% / month</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold">Est. Monthly Interest</p>
+                                <p class="text-xs sm:text-sm font-bold text-slate-700">Ksh ${monthlyInterest.toLocaleString()}</p>
+                            </div>
+                            <button onclick="handleApplyClick(${tier.amount},${tier.regFee})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition flex-shrink-0">Apply Now</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // KYC Modal Controls
+        function openKycModal() {
+            document.getElementById('modal-kyc').classList.remove('hidden');
+            document.getElementById('modal-kyc').classList.add('flex');
+            if (currentUser.fullName) {
+                document.getElementById('kyc-fullname').value = currentUser.fullName;
+            }
+        }
+        function closeKycModal() {
+            document.getElementById('modal-kyc').classList.add('hidden');
+            document.getElementById('modal-kyc').classList.remove('flex');
+        }
+
+        function submitKyc(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('kyc-fullname').value;
+            const idNumber = document.getElementById('kyc-idnumber').value;
+            const mpesaCode = document.getElementById('kyc-mpesa').value;
+
+            currentUser.fullName = fullName;
+            currentUser.verified = true;
+            currentUser.kyc = { idNumber, mpesaCode, verifiedAt: new Date().toLocaleString() };
+
+            updateUserInStorage();
+            closeKycModal();
+            updateDashboardData();
+            showAlert("Registration Fee validated successfully!", "success");
+        }
+
+        function updateUserInStorage() {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            const index = users.findIndex(u => u.email === currentUser.email);
+            if (index !== -1) {
+                users[index] = currentUser;
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+            }
+        }
+
+        function handleApplyClick(amount, regFee) {
+            if (!currentUser.verified) {
+                showAlert("Please complete your registration fee verification before applying for a loan.", "error");
+                openKycModal();
+                return;
+            }
+            if (currentUser.activeLoan) {
+                showAlert("You already have an active loan application.", "error");
+                return;
+            }
+
+            selectedTierForLoan = { amount, regFee };
+            const content = document.getElementById('loan-modal-content');
+            content.innerHTML = `
+                <p>You are about to request a loan of <strong class="text-emerald-700">Ksh ${amount.toLocaleString()}</strong>.</p>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                    <p class="text-xs text-slate-500">Loan Amount: <strong>Ksh ${amount.toLocaleString()}</strong></p>
+                    <p class="text-xs text-slate-500">Monthly Interest (10%): <strong>Ksh ${(amount * 0.10).toLocaleString()}</strong></p>
+                    <p class="text-xs text-slate-500">Disbursement Account: <strong>${currentUser.phone}</strong></p>
+                </div>
+                <p class="text-xs text-slate-500">Disbursement is processed within 2 working hours upon confirmation.</p>
+            `;
+            document.getElementById('modal-loan').classList.remove('hidden');
+            document.getElementById('modal-loan').classList.add('flex');
+        }
+
+        function closeLoanModal() {
+            document.getElementById('modal-loan').classList.add('hidden');
+            document.getElementById('modal-loan').classList.remove('flex');
+        }
+
+        function confirmLoanApplication() {
+            if (!selectedTierForLoan) return;
+
+            currentUser.activeLoan = {
+                amount: selectedTierForLoan.amount,
+                regFee: selectedTierForLoan.regFee,
+                status: "Pending Disbursement",
+                appliedAt: new Date().toLocaleString()
+            };
+
+            updateUserInStorage();
+            closeLoanModal();
+            updateDashboardData();
+            showAlert("Loan application submitted successfully! Funds will be disbursed within 2 working hours.", "success");
+        }
+
+        // Admin functionality
+        function switchAdminTab(tab) {
+            const paymentsBtn = document.getElementById('admin-tab-payments-btn');
+            const usersBtn = document.getElementById('admin-tab-users-btn');
+            const paymentsDiv = document.getElementById('admin-tab-payments');
+            const usersDiv = document.getElementById('admin-tab-users');
+
+            if (tab === 'payments') {
+                paymentsBtn.className = "pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition whitespace-nowrap";
+                usersBtn.className = "pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition whitespace-nowrap";
+                paymentsDiv.classList.remove('hidden');
+                usersDiv.classList.add('hidden');
+            } else {
+                usersBtn.className = "pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition whitespace-nowrap";
+                paymentsBtn.className = "pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition whitespace-nowrap";
+                usersDiv.classList.remove('hidden');
+                paymentsDiv.classList.add('hidden');
+                renderAdminUsers();
+            }
+        }
+
+        function renderAdminData() {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            let totalUsers = users.filter(u => !u.isAdmin).length;
+            let totalApps = users.filter(u => u.activeLoan).length;
+
+            document.getElementById('admin-stat-users').innerText = totalUsers;
+            document.getElementById('admin-stat-apps').innerText = totalApps;
+
+            const tbody = document.getElementById('admin-payments-list');
+            let rows = [];
+
+            users.forEach(u => {
+                if (u.kyc || u.activeLoan) {
+                    rows.push(`
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 font-medium text-slate-900 whitespace-nowrap">${u.kyc ? u.kyc.verifiedAt : (u.activeLoan ? u.activeLoan.appliedAt : '-')}</td>
+                            <td class="p-4 whitespace-nowrap">
+                                <div class="font-bold text-slate-900">${u.fullName}</div>
+                                <div class="text-[10px] text-slate-400">ID: ${u.kyc ? u.kyc.idNumber : 'N/A'}</div>
+                            </td>
+                            <td class="p-4 font-semibold text-emerald-700 whitespace-nowrap">${u.phone}</td>
+                            <td class="p-4 whitespace-nowrap">${u.activeLoan ? 'Ksh ' + u.activeLoan.amount.toLocaleString() : 'N/A'}</td>
+                            <td class="p-4 whitespace-nowrap">${u.activeLoan ? 'Ksh ' + u.activeLoan.regFee : (u.kyc ? 'Paid' : 'Pending')}</td>
+                            <td class="p-4 font-mono font-bold text-slate-700 whitespace-nowrap">${u.kyc ? u.kyc.mpesaCode : 'N/A'}</td>
+                            <td class="p-4 whitespace-nowrap">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${u.activeLoan ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}">
+                                    ${u.activeLoan ? u.activeLoan.status : 'KYC Verified'}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right whitespace-nowrap">
+                                ${u.activeLoan && u.activeLoan.status === 'Pending Disbursement' ? `
+                                    <button onclick="approveLoan('${u.email}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow">Approve</button>
+                                ` : '<span class="text-slate-400">Completed</span>'}
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No payment or loan requests found yet.</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join('');
+            }
+        }
+
+        function renderAdminUsers() {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            const tbody = document.getElementById('admin-users-list');
+            let rows = users.filter(u => !u.isAdmin).map(u => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 font-bold text-slate-900 whitespace-nowrap">${u.fullName}</td>
+                    <td class="p-4 text-slate-600 whitespace-nowrap">${u.email}</td>
+                    <td class="p-4 font-semibold text-emerald-700 whitespace-nowrap">${u.phone}</td>
+                    <td class="p-4 whitespace-nowrap">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${u.verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+                            ${u.verified ? 'Verified' : 'Pending Reg Fee'}
+                        </span>
+                    </td>
+                    <td class="p-4 whitespace-nowrap">${u.activeLoan ? 'Ksh ' + u.activeLoan.amount.toLocaleString() + ' (' + u.activeLoan.status + ')' : 'None'}</td>
+                </tr>
+            `);
+
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No registered user accounts found.</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join('');
+            }
+        }
+
+        function approveLoan(email) {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            const user = users.find(u => u.email === email);
+            if (user && user.activeLoan) {
+                user.activeLoan.status = "Disbursed";
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+                if (currentUser.email === email) {
+                    currentUser = user;
+                    localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                    updateDashboardData();
+                }
+                showAlert(`Loan for ${user.fullName} marked as Disbursed.`, "success");
+                renderAdminData();
+            }
+        }
+
+        // Notification helpers
+        function showAlert(msg, type = "success") {
+            const box = document.getElementById('alert-box');
+            const messageEl = document.getElementById('alert-message');
+            messageEl.innerText = msg;
+            box.className = `mb-6 p-4 rounded-xl shadow border text-sm flex items-center justify-between transition-all ${type === 'success' ?
