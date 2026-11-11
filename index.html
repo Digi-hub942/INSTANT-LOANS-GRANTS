@@ -107,8 +107,8 @@
             <!-- KYC Verification Banner if not verified -->
             <div id="kyc-banner" class="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
                 <div>
-                    <h3 class="text-xl font-bold">Complete KYC & Registration Fee Validation</h3>
-                    <p class="text-amber-100 text-sm mt-1">Upload your ID and pay the corresponding registration fee to unlock loan applications. Money is disbursed within 2 working hours.</p>
+                    <h3 class="text-xl font-bold">Complete Registration Fee Validation</h3>
+                    <p class="text-amber-100 text-sm mt-1">Pay the corresponding registration fee to unlock loan applications. Money is disbursed within 2 working hours.</p>
                 </div>
                 <button onclick="openKycModal()" class="whitespace-nowrap px-6 py-3 bg-white text-orange-600 font-semibold rounded-xl shadow hover:bg-orange-50 transition">Verify Account Now</button>
             </div>
@@ -209,23 +209,19 @@
     <div id="modal-kyc" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-slate-900">KYC & Registration Validation</h3>
+                <h3 class="text-xl font-bold text-slate-900">Registration Fee Validation</h3>
                 <button onclick="closeKycModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
             </div>
-            <p class="text-xs text-slate-500 mb-4">Please fill in your exact details as per your National ID card and simulate your registration fee payment to <strong>0792844220</strong>.</p>
+            <p class="text-xs text-slate-500 mb-4">Please confirm your full name and submit your registration fee payment to <strong>0792844220</strong>.</p>
             
             <form onsubmit="submitKyc(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Full Names (As on ID)</label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Full Names</label>
                     <input type="text" id="kyc-fullname" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="e.g. Jane Doe">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">National ID Number</label>
                     <input type="text" id="kyc-idnumber" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="e.g. 12345678">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Upload ID Photo (Front)</label>
-                    <input type="file" id="kyc-idphoto" accept="image/*" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                 </div>
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                     <p class="text-xs font-bold text-slate-700">Registration Fee Payment Info</p>
@@ -495,7 +491,7 @@
                                 <p class="text-[10px] text-slate-400 uppercase font-semibold">Est. Monthly Interest</p>
                                 <p class="text-sm font-bold text-slate-700">Ksh ${monthlyInterest.toLocaleString()}</p>
                             </div>
-                            <button onclick="handleApplyClick(${tier.amount}, ${tier.regFee})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition">Apply Now</button>
+                            <button onclick="handleApplyClick(${tier.amount},${tier.regFee})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition">Apply Now</button>
                         </div>
                     </div>
                 `;
@@ -528,33 +524,41 @@
             updateUserInStorage();
             closeKycModal();
             updateDashboardData();
-            showAlert("KYC & Registration Fee submitted for verification!", "success");
+            showAlert("Registration Fee validated successfully!", "success");
         }
 
-        // Loan Application Modal
+        function updateUserInStorage() {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            const index = users.findIndex(u => u.email === currentUser.email);
+            if (index !== -1) {
+                users[index] = currentUser;
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+                localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+            }
+        }
+
         function handleApplyClick(amount, regFee) {
             if (!currentUser.verified) {
-                showAlert("You cannot apply if you have not paid the registration fee and completed KYC verification.", "error");
+                showAlert("Please complete your registration fee verification before applying for a loan.", "error");
                 openKycModal();
                 return;
             }
             if (currentUser.activeLoan) {
-                showAlert("You already have an active loan application or disbursed loan.", "error");
+                showAlert("You already have an active loan application.", "error");
                 return;
             }
 
             selectedTierForLoan = { amount, regFee };
             const content = document.getElementById('loan-modal-content');
             content.innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between"><span class="text-slate-500">Loan Amount:</span> <span class="font-bold text-slate-800">Ksh ${amount.toLocaleString()}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Registration Fee Paid:</span> <span class="font-bold text-emerald-600">Ksh ${regFee} (Verified)</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Disbursement Phone:</span> <span class="font-bold text-slate-800">${currentUser.phone}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Processing Time:</span> <span class="font-bold text-amber-600">2 Working Hours</span></div>
+                <p>You are about to request a loan of <strong class="text-emerald-700">Ksh ${amount.toLocaleString()}</strong>.</p>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                    <p class="text-xs text-slate-500">Loan Amount: <strong>Ksh ${amount.toLocaleString()}</strong></p>
+                    <p class="text-xs text-slate-500">Monthly Interest (10%): <strong>Ksh ${(amount * 0.10).toLocaleString()}</strong></p>
+                    <p class="text-xs text-slate-500">Disbursement Account: <strong>${currentUser.phone}</strong></p>
                 </div>
-                <p class="text-xs text-slate-500">Loan will be deposited directly to your phone number upon validation.</p>
+                <p class="text-xs text-slate-500">Disbursement is processed within 2 working hours upon confirmation.</p>
             `;
-
             document.getElementById('modal-loan').classList.remove('hidden');
             document.getElementById('modal-loan').classList.add('flex');
         }
@@ -565,152 +569,131 @@
         }
 
         function confirmLoanApplication() {
-            const loanRecord = {
+            if (!selectedTierForLoan) return;
+
+            currentUser.activeLoan = {
                 amount: selectedTierForLoan.amount,
                 regFee: selectedTierForLoan.regFee,
-                status: 'Pending Verification',
-                appliedAt: new Date().toLocaleString(),
-                idNumber: currentUser.kyc ? currentUser.kyc.idNumber : 'N/A',
-                mpesaCode: currentUser.kyc ? currentUser.kyc.mpesaCode : 'N/A',
-                phone: currentUser.phone,
-                userEmail: currentUser.email,
-                userName: currentUser.fullName
+                status: "Pending Disbursement",
+                appliedAt: new Date().toLocaleString()
             };
-
-            currentUser.activeLoan = loanRecord;
-
-            // Save record in central payments log
-            let allPayments = JSON.parse(localStorage.getItem('ilg_payments') || '[]');
-            allPayments.push(loanRecord);
-            localStorage.setItem('ilg_payments', JSON.stringify(allPayments));
 
             updateUserInStorage();
             closeLoanModal();
             updateDashboardData();
-            showAlert("Loan application submitted successfully! Time taken to grant loan is two working hours.", "success");
+            showAlert("Loan application submitted successfully! Funds will be disbursed within 2 working hours.", "success");
         }
 
-        function updateUserInStorage() {
-            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
-            users = users.map(u => u.email === currentUser.email ? currentUser : u);
-            localStorage.setItem('ilg_users', JSON.stringify(users));
-            localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
-        }
-
-        // ADMIN FUNCTIONS
+        // Admin functionality
         function switchAdminTab(tab) {
-            const payTab = document.getElementById('admin-tab-payments');
-            const usersTab = document.getElementById('admin-tab-users');
-            const payBtn = document.getElementById('admin-tab-payments-btn');
+            const paymentsBtn = document.getElementById('admin-tab-payments-btn');
             const usersBtn = document.getElementById('admin-tab-users-btn');
+            const paymentsDiv = document.getElementById('admin-tab-payments');
+            const usersDiv = document.getElementById('admin-tab-users');
 
             if (tab === 'payments') {
-                payTab.classList.remove('hidden');
-                usersTab.classList.add('hidden');
-                payBtn.className = "pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition";
+                paymentsBtn.className = "pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition";
                 usersBtn.className = "pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition";
+                paymentsDiv.classList.remove('hidden');
+                usersDiv.classList.add('hidden');
             } else {
-                usersTab.classList.remove('hidden');
-                payTab.classList.add('hidden');
                 usersBtn.className = "pb-3 text-sm font-bold text-emerald-700 border-b-2 border-emerald-700 transition";
-                payBtn.className = "pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition";
+                paymentsBtn.className = "pb-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition";
+                usersDiv.classList.remove('hidden');
+                paymentsDiv.classList.add('hidden');
+                renderAdminUsers();
             }
         }
 
         function renderAdminData() {
-            const users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
-            const payments = JSON.parse(localStorage.getItem('ilg_payments') || '[]');
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            let totalUsers = users.filter(u => !u.isAdmin).length;
+            let totalApps = users.filter(u => u.activeLoan).length;
 
-            document.getElementById('admin-stat-users').innerText = users.filter(u => u.email !== ADMIN_EMAIL).length;
-            document.getElementById('admin-stat-apps').innerText = payments.length;
+            document.getElementById('admin-stat-users').innerText = totalUsers;
+            document.getElementById('admin-stat-apps').innerText = totalApps;
 
-            // Render Payments List
-            const paymentsBody = document.getElementById('admin-payments-list');
-            if (payments.length === 0) {
-                paymentsBody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No payment or loan applications recorded yet.</td></tr>`;
-            } else {
-                paymentsBody.innerHTML = payments.map((p, index) => `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-4 whitespace-nowrap text-slate-400">${p.appliedAt}</td>
-                        <td class="p-4"><strong class="text-slate-800 block">${p.userName}</strong>ID: ${p.idNumber}</td>
-                        <td class="p-4 font-semibold text-slate-700">${p.phone}</td>
-                        <td class="p-4 font-bold text-emerald-700">Ksh ${p.amount.toLocaleString()}</td>
-                        <td class="p-4 font-medium text-slate-600">Ksh ${p.regFee}</td>
-                        <td class="p-4 uppercase font-mono font-bold text-blue-600">${p.mpesaCode}</td>
-                        <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
-                                p.status === 'Approved / Disbursed' ? 'bg-emerald-100 text-emerald-800' :
-                                p.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                            }">${p.status}</span>
-                        </td>
-                        <td class="p-4 text-right space-x-1">
-                            ${p.status === 'Pending Verification' ? `
-                                <button onclick="updatePaymentStatus(${index}, 'Approved / Disbursed')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-[11px] font-semibold">Approve</button>
-                                <button onclick="updatePaymentStatus(${index}, 'Rejected')" class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-[11px] font-semibold">Reject</button>
-                            ` : `<span class="text-slate-400 text-[11px]">Completed</span>`}
-                        </td>
-                    </tr>
-                `).join('');
-            }
+            const tbody = document.getElementById('admin-payments-list');
+            let rows = [];
 
-            // Render Registered Users List
-            const usersBody = document.getElementById('admin-users-list');
-            const clientUsers = users.filter(u => u.email !== ADMIN_EMAIL);
-            if (clientUsers.length === 0) {
-                usersBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No registered client accounts found.</td></tr>`;
-            } else {
-                usersBody.innerHTML = clientUsers.map(u => `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-4 font-semibold text-slate-800">${u.fullName || 'N/A'}</td>
-                        <td class="p-4">${u.email}</td>
-                        <td class="p-4 font-medium">${u.phone}</td>
-                        <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${u.verified ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
-                                ${u.verified ? 'Reg Fee Paid' : 'Pending Fee'}
-                            </span>
-                        </td>
-                        <td class="p-4">${u.activeLoan ? `Ksh ${u.activeLoan.amount.toLocaleString()}` : 'None'}</td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        function updatePaymentStatus(index, newStatus) {
-            let payments = JSON.parse(localStorage.getItem('ilg_payments') || '[]');
-            if (payments[index]) {
-                payments[index].status = newStatus;
-                localStorage.setItem('ilg_payments', JSON.stringify(payments));
-
-                // Synchronize status back to user account
-                let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
-                let targetUser = users.find(u => u.email === payments[index].userEmail);
-                if (targetUser && targetUser.activeLoan) {
-                    targetUser.activeLoan.status = newStatus;
-                    localStorage.setItem('ilg_users', JSON.stringify(users));
+            users.forEach(u => {
+                if (u.kyc || u.activeLoan) {
+                    rows.push(`
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 font-medium text-slate-900">${u.kyc ? u.kyc.verifiedAt : (u.activeLoan ? u.activeLoan.appliedAt : '-')}</td>
+                            <td class="p-4">
+                                <div class="font-bold text-slate-900">${u.fullName}</div>
+                                <div class="text-[10px] text-slate-400">ID: ${u.kyc ? u.kyc.idNumber : 'N/A'}</div>
+                            </td>
+                            <td class="p-4 font-semibold text-emerald-700">${u.phone}</td>
+                            <td class="p-4">${u.activeLoan ? 'Ksh ' + u.activeLoan.amount.toLocaleString() : 'N/A'}</td>
+                            <td class="p-4">${u.activeLoan ? 'Ksh ' + u.activeLoan.regFee : (u.kyc ? 'Paid' : 'Pending')}</td>
+                            <td class="p-4 font-mono font-bold text-slate-700">${u.kyc ? u.kyc.mpesaCode : 'N/A'}</td>
+                            <td class="p-4">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${u.activeLoan ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}">
+                                    ${u.activeLoan ? u.activeLoan.status : 'KYC Verified'}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                ${u.activeLoan && u.activeLoan.status === 'Pending Disbursement' ? `
+                                    <button onclick="approveLoan('${u.email}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow">Approve & Disburse</button>
+                                ` : '<span class="text-slate-400">Completed</span>'}
+                            </td>
+                        </tr>
+                    `);
                 }
+            });
 
-                renderAdminData();
-                showAlert(`Loan application marked as ${newStatus}`, "success");
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No payment or loan requests found yet.</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join('');
             }
         }
 
-        // Notification Message Box Helper (Replaces alert())
-        function showAlert(msg, type) {
-            const alertBox = document.getElementById('alert-box');
-            const alertMessage = document.getElementById('alert-message');
-            alertMessage.innerText = msg;
-            alertBox.className = `mb-6 p-4 rounded-xl shadow border text-sm flex items-center justify-between transition-all ${
-                type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            }`;
-            alertBox.classList.remove('hidden');
-            setTimeout(() => { hideAlert(); }, 6000);
+        function renderAdminUsers() {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            const tbody = document.getElementById('admin-users-list');
+            let rows = users.filter(u => !u.isAdmin).map(u => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 font-bold text-slate-900">${u.fullName}</td>
+                    <td class="p-4 text-slate-600">${u.email}</td>
+                    <td class="p-4 font-semibold text-emerald-700">${u.phone}</td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${u.verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+                            ${u.verified ? 'Verified' : 'Pending Reg Fee'}
+                        </span>
+                    </td>
+                    <td class="p-4">${u.activeLoan ? 'Ksh ' + u.activeLoan.amount.toLocaleString() + ' (' + u.activeLoan.status + ')' : 'None'}</td>
+                </tr>
+            `);
+
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No registered user accounts found.</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join('');
+            }
         }
 
-        function hideAlert() {
-            document.getElementById('alert-box').classList.add('hidden');
+        function approveLoan(email) {
+            let users = JSON.parse(localStorage.getItem('ilg_users') || '[]');
+            const user = users.find(u => u.email === email);
+            if (user && user.activeLoan) {
+                user.activeLoan.status = "Disbursed";
+                localStorage.setItem('ilg_users', JSON.stringify(users));
+                if (currentUser.email === email) {
+                    currentUser = user;
+                    localStorage.setItem('ilg_current_user', JSON.stringify(currentUser));
+                    updateDashboardData();
+                }
+                showAlert(`Loan for ${user.fullName} marked as Disbursed.`, "success");
+                renderAdminData();
+            }
         }
 
-        window.onload = initApp;
-    </script>
-</body>
-</html>
+        // Notification helpers
+        function showAlert(msg, type = "success") {
+            const box = document.getElementById('alert-box');
+            const messageEl = document.getElementById('alert-message');
+            messageEl.innerText = msg;
+            box.className = `mb-6 p-4 rounded-xl shadow border text-sm flex items-center justify-between transition-all ${type ===
